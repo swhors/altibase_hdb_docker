@@ -1,0 +1,122 @@
+#####################################
+# telegraf docker file
+#
+# 07/20/2018 
+# swhors@coupang.com
+#
+
+#####################################
+# os image
+FROM ubuntu:16.04
+
+#####################################
+# install basic development tools 
+RUN apt-get -qq update \
+    && apt-get -qq install -y g++ cmake autoconf curl git gawk vim texlive help2man\
+    wget php python perl libncurses5-dev libssl-dev locales libtool texinfo\
+    binutils-dev ddd tkdiff libldap2-dev manpages-dev autopoint gettext \
+    && apt-get clean
+RUN apt install -y software-properties-common g++-multilib rpm build-essential
+RUN locale-gen ko_KR.EUC-KR
+
+#####################################
+# git no check ssl
+ENV GIT_SSL_NO_VERIFY 0
+
+#####################################
+# install re2c
+#RUN mkdir -p ~/Download;cd ~/Download;git clone https://github.com/skvadrik/re2c.git
+ADD re2c-0.13.5.tar.gz /root/Download/
+RUN ls ~/Download/re2c-0.13.5
+RUN cd ~/Download/re2c-0.13.5;./configure --prefix=/usr/local/;make;make install;rm -fR ~/Download/re2c-0.13.5
+ENV PATH /usr/local/bin:$PATH
+
+#####################################
+# install bison
+#ADD bison-2.7.tar.gz /root/Download
+RUN cd ~/Download;wget https://ftp.gnu.org/gnu/bison/bison-2.7.tar.gz;tar xvzf bison-2.7.tar.gz
+RUN cd ~/Download/bison-2.7;./configure --prefix=/usr/local/;make;make install
+ENV PATH /usr/local/share/bison-2.7/bin:$PATH
+ENV LDLIBRARY_PATH /usr/local/share/bison-2.7/lib:$LD_LIBRARY_PATH
+
+#####################################
+# install flex 
+RUN cd ~/Download;wget https://sourceforge.net/projects/flex/files/flex-2.5.37.tar.gz/download
+RUN cd ~/Download;mv download flex-2.5.37.tar.gz;tar xvxf flex-2.5.37.tar.gz;cd ~/Download/flex-2.5.37;./autogen.sh;./configure --prefix=/usr/local/share/flex-2.5.37;make;make install
+ENV PATH /usr/local/share/flex-2.5.37/bin:$PATH
+ENV LDLIBRARY_PATH /usr/local/share/flex.2.5.37/lib:$LD_LIBRARY_PATH
+
+#####################################
+# install java 1.7 environment tools 
+ADD jdk-7u80-linux-x64.tar.gz /usr/share/java/
+ENV ADAPTER_JAVA_HOME	/usr/share/java/jdk1.7.0_80
+
+#####################################
+# install java 1.5 environment tools 
+ADD jdk-1_5_0_22-linux-amd64.bin /root/Download/jdk-1_5_0_22-linux-amd64.bin
+RUN chmod 755 /root/Download/jdk-1_5_0_22-linux-amd64.bin
+RUN (echo yes) | sh /root/Download/jdk-1_5_0_22-linux-amd64.bin
+ENV JAVA_HOME /usr/share/java/jdk1.5.0_22
+RUN mv /jdk1.5.0_22 /usr/share/java
+ENV PATH $PATH:$JAVA_HOME/bin
+
+#####################################
+# set go environments
+ENV ALTIDEV_HOME	/root/work/altibase
+ENV ALTIBASE_DEV	/root/work/altibase
+ENV ALTIBASE_HOME	/root/work/altibase/altibase_home
+ENV ALTIBASE_NLS_USE	US7ASCII
+ENV ALTIBASE_PORT_NO	17730
+ENV CLASSPATH		.:${JAVA_HOME}/lib:${JAVA_HOME}/jre/lib:${ALTIBASE_HOME}/lib/Altibase.jar:$CLASSPATH
+#ENV LD_LIBRARY_PATH	$ADAPTER_JAVA_HOME/jre/lib/amd64/server:${ALTIBASE_HOME}/lib:${LD_LIBRARY_PATH}
+ENV LD_LIBRARY_PATH	$ALTIBASE_HOME/lib:$LD_LIBRARY_PATH
+
+RUN echo "alias godev='cd $ALTIBASE_DEV'" >> /root/.bashrc
+ENV PATH		$JAVA_HOME/bin:$PATH:$ALTIBASE_HOME/bin
+ENV LANG                ko_KR.EUC-KR
+
+#####################################
+# instal gmp
+ENV GMPPATH /usr/local/share/gmp
+RUN cd ~/Download;wget https://gmplib.org/download/gmp/gmp-6.1.2.tar.xz
+RUN cd ~/Download;xz -d gmp-6.1.2.tar.xz;tar xvf gmp-6.1.2.tar
+RUN cd ~/Download/gmp-6.1.2;./configure --enable-shared --enable-static --prefix=$GMPPATH;make;make install
+
+#####################################
+# install MPFR 
+ENV MPFRPATH /usr/local/share/mpfr
+RUN cd ~/Download;wget https://www.mpfr.org/mpfr-current/mpfr-4.0.1.tar.gz
+RUN cd ~/Download;tar xvzf mpfr-4.0.1.tar.gz
+RUN cd ~/Download/mpfr-4.0.1;./configure --enable-shared --enable-static --prefix=$MPFRPATH --with-gmp=$GMPPATH;make install
+
+#####################################
+# install mpc
+ENV MPCPATH /usr/local/share/mpc
+RUN cd ~/Download;wget https://ftp.gnu.org/gnu/mpc/mpc-1.1.0.tar.gz
+RUN cd ~/Download;tar xvzf mpc-1.1.0.tar.gz
+RUN cd ~/Download/mpc-1.1.0;./configure --enable-shared --enable-static --prefix=$MPCPATH --with-gmp=$GMPPATH --with-mpfr=$MPFRPATH;make install
+
+#####################################
+# install libelf 
+ENV LIBELFPATH /usr/local/share/libelf
+RUN cd ~/Download;wget http://www.mr511.de/software/libelf-0.8.13.tar.gz
+RUN cd ~/Download;tar xvzf libelf-0.8.13.tar.gz
+RUN cd ~/Download/libelf-0.8.13;./configure --enable-shared --enable-static --prefix=$LIBELFPATH --with-gmp=$GMPPATH --with-mpfr=$MPFRPATH;make install
+
+#####################################
+# set ld_library_path
+ENV LD_LIBRATY_PATH $GMPPATH/lib:$MPFRPATH/lib:$MPCPATH/lib:$LIBELFPATH/lib:$LD_LIBRARY_PATH
+
+#####################################
+# clean installing files.
+RUN rm -fR ~/Download/flex* ~/Download/bison* ~/Download/gmp* ~/Download/mpfr* ~/Download/jdk* ~/Download/mpc* ~/Download/libelf*
+
+#####################################
+# get source code
+RUN mkdir -p /root/work;
+RUN cd /root/work;git clone https://github.com/ALTIBASE/altibase.git
+RUN cd $ALTIBASE_DEV;./configure
+
+VOLUME     ["/Volume/disk1"]
+
+ENTRYPOINT ["/bin/bash"]
