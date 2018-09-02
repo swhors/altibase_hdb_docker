@@ -1,0 +1,26 @@
+diff -ur sys/select.h sys_new/select.h
+--- sys/select.h	2018-08-15 06:48:53.241638000 +0000
++++ sys_new/select.h	2018-08-15 06:50:39.234601000 +0000
+@@ -60,16 +60,20 @@
+ #define	__FD_ELT(d)	((d) / __NFDBITS)
+ #define	__FD_MASK(d)	((__fd_mask) (1UL << ((d) % __NFDBITS)))
+ 
++#ifndef FD_SETSIZE
++#define FD_SETSIZE __FD_SETSIZE
++#endif
++
+ /* fd_set for select and pselect.  */
+ typedef struct
+   {
+     /* XPG4.2 requires this member name.  Otherwise avoid the name
+        from the global namespace.  */
+ #ifdef __USE_XOPEN
+-    __fd_mask fds_bits[__FD_SETSIZE / __NFDBITS];
++    __fd_mask fds_bits[FD_SETSIZE / __NFDBITS];
+ # define __FDS_BITS(set) ((set)->fds_bits)
+ #else
+-    __fd_mask __fds_bits[__FD_SETSIZE / __NFDBITS];
++    __fd_mask __fds_bits[FD_SETSIZE / __NFDBITS];
+ # define __FDS_BITS(set) ((set)->__fds_bits)
+ #endif
+   } fd_set;
