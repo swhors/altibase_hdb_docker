@@ -93,7 +93,8 @@ RUN mkdir -p /root/work;
 RUN cd /root/work;git clone https://github.com/ALTIBASE/altibase.git
 RUN locale-gen ko_KR.EUC-KR
 RUN cd $ALTIBASE_DEV;./configure
-RUN cd $ALTIBASE_DEV;make build -j2
+#RUN cd $ALTIBASE_DEV;make build -j2
+RUN cd $ALTIBASE_DEV;make build 
 
 
 #####################################
