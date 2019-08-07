@@ -107,7 +107,7 @@ ENV  LOGSHOME     $ALTIDATAHOME/logs
 ENV  ARCHIVE_DIR  $ALTIDATAHOME/arch_logs
 COPY patch_property.sh $ALTIBASE_HOME/conf/
 RUN  mkdir -p $ALTIDATAHOME;mkdir -p $TRCHOME;mkdir -p $DISKDBHOME
-RUN  mkdir -p $LOGANCHORHOME;mkdir -p $ARCHIVE_DIR;mkdir -p $MEMDBHOME
+RUN  mkdir -p $LOGSHOME;mkdir -p $ARCHIVE_DIR;mkdir -p $MEMDBHOME
 RUN  cd $ALTIBASE_HOME/conf;sh patch_property.sh;rm patch_property.sh
 
 #####################################
